@@ -1,2 +1,37 @@
 ---
-# tasks file for install_k8s
+- name: Download utility kk   
+  become: false
+  ansible.builtin.unarchive:
+    src: "https://github.com/kubesphere/kubekey/releases/download/v3.1.6/kubekey-{{ kk_version }}-linux-amd64.tar.gz"
+    dest: "{{ home_dir }}"   
+    remote_src: yes 
+
+- name: Check if kubeadm is already initialized
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: kubeadm_initialized
+
+- name: Create cluster 
+  # become: true
+  ansible.builtin.command: "{{ home_dir }}/kk create cluster --with-kubernetes {{ k8s_version}} --container-manager containerd -y"
+  register: kk_create_output
+  when: not kubeadm_initialized.stat.exists
+
+- name: Check exists "kubectl" config files
+  stat:
+    path: "{{ home_dir }}/.kube/config"
+  register: exists_config
+
+- name: Copy the "kubectl" config files to the home directory 
+  when: not exists_config.stat.exists
+  block:
+    - name: create directory $HOME/.kube/      
+      ansible.builtin.shell: "test -d {{ home_dir }}/.kube || mkdir {{ home_dir }}/.kube"
+
+    - name: Copy config files  
+      ansible.builtin.shell: "cp -i /etc/kubernetes/admin.conf {{ home_dir }}/.kube/config"
+
+    - name: change  owner directory $HOME/.kube/ 
+      ansible.builtin.shell: "chown -R {{ ssh_user }}:{{ ssh_user }} {{ home_dir }}/.kube" 
+      
+

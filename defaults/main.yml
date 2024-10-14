@@ -1,2 +1,5 @@
 ---
-# defaults file for install_k8s
+kk_version: v3.1.6
+k8s_version: v1.28.12
+home_dir: /home/miroshnichenko_an
+ssh_user: miroshnichenko_an
